@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#F7F4EF" />
+  <title>慢减 · 生活化减脂陪伴</title>
+  <style>
+    :root {
+      --bg: #F7F4EF;          /* 奶白暖底 */
+      --card: #FFFFFF;
+      --green: #5FA887;       /* 薄荷绿主色 */
+      --green-deep: #4A8F70;
+      --green-soft: #E7F2EC;  /* 浅薄荷 */
+      --green-softer: #F1F7F4;
+      --text: #2F3B33;
+      --text-sub: #8A948E;
+      --line: #ECEAE4;
+      --danger: #D98E8E;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 440px;
+      height: 100vh;
+      height: 100dvh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    @media (min-width: 480px) {
+      body { background: #ECE9E2; }
+      .app { box-shadow: 0 0 40px rgba(0,0,0,.08); }
+    }
+
+    /* ===== 顶部 ===== */
+    header {
+      padding: 22px 20px 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      width: 40px; height: 40px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, var(--green), var(--green-deep));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 20px; font-weight: 700;
+    }
+    .brand-name { font-size: 19px; font-weight: 700; letter-spacing: .5px; }
+    .brand-slogan { font-size: 12px; color: var(--text-sub); }
+
+    /* ===== 主内容 ===== */
+    main {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      padding: 12px 16px 0;
+    }
+    section.tab { display: none; }
+    section.tab.active { display: block; animation: fade .25s ease; }
+    section#tab-today.active {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding-bottom: 20px;
+    }
+    section#tab-chat.active {
+      display: flex; flex-direction: column;
+      flex: 1; min-height: 0;
+    }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none;} }
+
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 12px rgba(90, 110, 95, .06);
+    }
+    .card-title {
+      font-size: 15px; font-weight: 700;
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title::before {
+      content: ""; width: 4px; height: 16px;
+      background: var(--green); border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .card-title-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .card-title-row .card-title { margin-bottom: 0; }
+    .unit-switch {
+      display: flex; gap: 2px;
+      background: var(--green-softer);
+      border-radius: 999px; padding: 3px;
+    }
+    .unit-btn {
+      border: none; background: transparent;
+      padding: 4px 14px; font-size: 13px; color: var(--text-sub);
+      border-radius: 999px; cursor: pointer; transition: all .15s;
+    }
+    .unit-btn.active { background: #fff; color: var(--green); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+
+    /* ===== 今日小语 ===== */
+    .daily {
+      background: linear-gradient(160deg, #E3F0EA, #F6FAF7);
+      border-radius: 22px;
+      padding: 28px 24px 22px;
+      margin-bottom: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .daily::before {
+      content: "\201C";  /* 大装饰引号 */
+      position: absolute;
+      top: -14px; left: 10px;
+      font-size: 96px; line-height: 1;
+      color: var(--green);
+      opacity: .14;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .daily-label {
+      display: inline-block;
+      font-size: 12px; color: var(--green-deep);
+      background: rgba(255,255,255,.85);
+      border-radius: 999px;
+      padding: 4px 14px; letter-spacing: 2px;
+      font-weight: 600;
+    }
+    .daily-text {
+      font-size: 18px; font-weight: 600; line-height: 1.75;
+      margin-top: 16px; color: var(--text);
+    }
+    .daily-date {
+      font-size: 11px; color: var(--text-sub);
+      margin-top: 16px; letter-spacing: 1px;
+    }
+
+    /* ===== 体重输入 ===== */
+    .weight-form { display: flex; gap: 10px; align-items: center; }
+    .weight-input-wrap {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center;
+      background: var(--green-softer);
+      border: 1.5px solid var(--line);
+      border-radius: 14px; padding: 0 14px;
+    }
+    .weight-input-wrap:focus-within { border-color: var(--green); background: #fff; }
+    .weight-input {
+      flex: 1; min-width: 0;
+      border: none; background: transparent;
+      font-size: 24px; font-weight: 700; padding: 12px 0;
+      color: var(--text); outline: none;
+    }
+    .weight-unit { font-size: 14px; color: var(--text-sub); margin-left: 6px; flex-shrink: 0; }
+    .btn {
+      background: var(--green); color: #fff;
+      border: none; border-radius: 14px;
+      font-size: 15px; font-weight: 600;
+      padding: 0 22px; height: 50px;
+      cursor: pointer; flex-shrink: 0; white-space: nowrap;
+      transition: background .15s, transform .05s;
+    }
+    .btn:active { background: var(--green-deep); transform: scale(.97); }
+    .btn:disabled { background: #C9D8CE; cursor: not-allowed; }
+
+    /* ===== 趋势图（折线） ===== */
+    .range-tabs {
+      display: flex; gap: 6px; margin-bottom: 16px;
+      background: var(--green-softer);
+      border-radius: 12px; padding: 4px;
+    }
+    .range-btn {
+      flex: 1; border: none; background: transparent;
+      padding: 7px 0; font-size: 13px; color: var(--text-sub);
+      border-radius: 9px; cursor: pointer; transition: all .15s;
+    }
+    .range-btn.active { background: #fff; color: var(--green); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .trend-chart { width: 100%; }
+    .trend-chart svg { display: block; width: 100%; height: auto; }
+    .trend-empty { font-size: 13px; color: var(--text-sub); padding: 18px 0; text-align: center; }
+
+    /* ===== AI 分析 ===== */
+    .analysis { display: none; }
+    .analysis.show { display: block; animation: fade .25s ease; }
+    .analysis-box {
+      background: var(--green-softer);
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 14px;
+      white-space: pre-wrap;
+      color: var(--text);
+      line-height: 1.75;
+    }
+    .loading-dots { color: var(--text-sub); font-size: 13px; }
+
+    /* ===== 聊天 ===== */
+    .chat-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .chat-list { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 0 12px; }
+    .msg { display: flex; margin-bottom: 12px; }
+    .msg.user { justify-content: flex-end; }
+    .bubble {
+      max-width: 82%; padding: 10px 14px;
+      border-radius: 16px; font-size: 14px; white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user .bubble { background: var(--green); color: #fff; border-bottom-right-radius: 6px; }
+    .msg.ai .bubble { background: #fff; border-bottom-left-radius: 6px; box-shadow: 0 1px 6px rgba(90,110,95,.08); }
+    .chat-input-bar {
+      display: flex; gap: 8px; padding: 10px 0 12px;
+      background: var(--bg); flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1; min-width: 0; border: 1.5px solid var(--line); border-radius: 22px;
+      padding: 10px 16px; font-size: 14px; outline: none; background: #fff;
+    }
+    .chat-input:focus { border-color: var(--green); }
+    .send-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--green); color: #fff; border: none;
+      font-size: 16px; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .send-btn:disabled { background: #C9D8CE; }
+
+    /* ===== 底部导航 ===== */
+    .tabbar {
+      flex-shrink: 0;
+      display: flex; background: #fff;
+      border-top: 1px solid var(--line);
+      padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+    }
+    .tab-item {
+      flex: 1; text-align: center; padding: 6px 0;
+      color: var(--text-sub); font-size: 12px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .tab-item .icon { font-size: 20px; }
+    .tab-item.active { color: var(--green); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">慢</div>
+      <div>
+        <div class="brand-name">慢减</div>
+        <div class="brand-slogan">慢就是快，减得安心</div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Tab 1：今日 -->
+      <section class="tab active" id="tab-today">
+        <div class="daily">
+          <div class="daily-label">今日小语</div>
+          <div class="daily-text" id="daily-text"></div>
+          <div class="daily-date" id="daily-date"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <div class="card-title">记录体重</div>
+            <div class="unit-switch">
+              <button class="unit-btn active" data-unit="kg">公斤</button>
+              <button class="unit-btn" data-unit="jin">斤</button>
+            </div>
+          </div>
+          <div class="weight-form">
+            <div class="weight-input-wrap">
+              <input class="weight-input" id="weight-input" type="text" inputmode="decimal" placeholder="请输入体重" />
+              <span class="weight-unit" id="weight-unit">公斤</span>
+            </div>
+            <button class="btn" id="record-btn">记录</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">体重趋势</div>
+          <div class="range-tabs" id="range-tabs">
+            <button class="range-btn active" data-range="7">近 7 天</button>
+            <button class="range-btn" data-range="30">近 1 月</button>
+            <button class="range-btn" data-range="90">近 3 月</button>
+          </div>
+          <div class="trend-chart" id="trend-chart"></div>
+        </div>
+
+        <div class="card analysis" id="analysis-block">
+          <div class="card-title">慢减怎么看</div>
+          <div class="analysis-box" id="analysis-text"></div>
+        </div>
+      </section>
+
+      <!-- Tab 2：问问慢减 -->
+      <section class="tab" id="tab-chat">
+        <div class="chat-wrap">
+          <div class="chat-list" id="chat-list"></div>
+          <div class="chat-input-bar">
+            <input class="chat-input" id="chat-input" type="text" placeholder="想问点什么？比如：平台期怎么破" />
+            <button class="send-btn" id="send-btn">➤</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <div class="tab-item active" data-tab="today">
+        <span class="icon">☀️</span>今日
+      </div>
+      <div class="tab-item" data-tab="chat">
+        <span class="icon">💬</span>问问慢减
+      </div>
+    </nav>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    /* ============ 配置 ============ */
+    const CFG = window.APP_CONFIG;
+    const STORE_WEIGHTS = 'slowloss_weights';
+    const STORE_CONV = 'slowloss_conv_id';
+    const STORE_ANALYSIS = 'slowloss_analysis';
+
+    /* ============ 今日小语 ============ */
+    const PHRASES = [
+      '体重涨了一点，多半是水分。别急着饿自己。',
+      '一顿吃多不会胖，天天吃多才会。',
+      '减脂不是惩罚，是照顾自己。',
+      '今天不用完美，比昨天好一点就行。',
+      '饿和馋不一样，先喝口水分辨一下。',
+      '慢一点没关系，快反而容易反弹。',
+      '体重是波动的，趋势才是真的。',
+      '你不需要变成别人，只需要更舒服的自己。',
+      '嘴馋的时候，等十分钟再决定。',
+      '平台期不是失败，是身体在适应。',
+      '吃撑了就别再自责，下一顿正常吃。',
+      '别用绝食惩罚一次暴食。',
+      '记录体重，是为了了解身体，不是审判自己。',
+      '减脂的路是长跑，不是冲刺。',
+      '好好吃饭，是减脂里最被低估的事。',
+    ];
+    function todayKey() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    function dayOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      return Math.floor((now - start) / 86400000);
+    }
+    function renderDaily() {
+      document.getElementById('daily-date').textContent = todayKey();
+      document.getElementById('daily-text').textContent = PHRASES[dayOfYear() % PHRASES.length];
+    }
+
+    /* ============ 体重记录 ============ */
+    function loadWeights() {
+      try { return JSON.parse(localStorage.getItem(STORE_WEIGHTS)) || []; }
+      catch (e) { return []; }
+    }
+    function saveWeights(list) { localStorage.setItem(STORE_WEIGHTS, JSON.stringify(list)); }
+
+    function loadAnalysis() {
+      try { return JSON.parse(localStorage.getItem(STORE_ANALYSIS)) || null; }
+      catch (e) { return null; }
+    }
+    function saveAnalysis(record) { localStorage.setItem(STORE_ANALYSIS, JSON.stringify(record)); }
+
+    let currentUnit = 'kg'; // 'kg' 公斤 | 'jin' 斤
+
+    function recordWeight() {
+      const input = document.getElementById('weight-input');
+      const v = parseFloat(input.value);
+      if (!v) { alert('请输入体重数字'); return; }
+      const isKg = currentUnit === 'kg';
+      const kg = Math.round((isKg ? v : v / 2) * 10) / 10;
+      if (kg < 20 || kg > 300) { alert(isKg ? '请输入有效体重（20–300 公斤）' : '请输入有效体重（40–600 斤）'); return; }
+      const list = loadWeights();
+      const today = todayKey();
+      const idx = list.findIndex(w => w.date === today);
+      if (idx >= 0) list[idx].weight = kg; else list.push({ date: today, weight: kg });
+      saveWeights(list);
+      input.value = '';
+      renderTrend();
+      runAnalysis();
+    }
+
+    /* ============ 趋势图（折线） ============ */
+    let currentRange = 7;
+
+    function fmtDate(d) {
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    function addDays(dateStr, n) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dt = new Date(y, m-1, d);
+      dt.setDate(dt.getDate() + n);
+      return fmtDate(dt);
+    }
+    function toLocalMidnight(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m-1, d).getTime();
+    }
+
+    function renderTrend() {
+      const chart = document.getElementById('trend-chart');
+      const all = loadWeights().sort((a,b) => a.date < b.date ? -1 : 1);
+      if (!all.length) {
+        chart.innerHTML = '<div class="trend-empty">记录几天后，就能看到你的体重趋势啦</div>';
+        return;
+      }
+      const endStr = todayKey();
+      const startStr = addDays(endStr, -(currentRange - 1));
+      const inRange = all.filter(w => w.date >= startStr && w.date <= endStr);
+      if (!inRange.length) {
+        chart.innerHTML = '<div class="trend-empty">这个时间段还没有记录，先记下今天的体重吧</div>';
+        return;
+      }
+      const display = inRange.map(w => {
+        const val = currentUnit === 'jin' ? w.weight * 2 : w.weight;
+        return { date: w.date, weight: Math.round(val * 10) / 10 };
+      });
+      chart.innerHTML = drawLineChart(display, startStr, endStr);
+    }
+
+    function drawLineChart(points, startStr, endStr) {
+      const W = 320, H = 170;
+      const padL = 12, padR = 12, padT = 26, padB = 26;
+      const innerW = W - padL - padR;
+      const innerH = H - padT - padB;
+
+      const weights = points.map(p => p.weight);
+      const min = Math.min.apply(null, weights);
+      const max = Math.max.apply(null, weights);
+      const span = (max - min) || 1;
+      const yMin = min - span * 0.25;
+      const yMax = max + span * 0.25;
+
+      const startTime = toLocalMidnight(startStr);
+      const endTime = toLocalMidnight(endStr);
+      const total = (endTime - startTime) || 1;
+
+      function xFor(dateStr) {
+        const t = toLocalMidnight(dateStr);
+        const frac = (t - startTime) / total;
+        return padL + Math.max(0, Math.min(1, frac)) * innerW;
+      }
+      function yFor(w) {
+        return padT + (1 - (w - yMin) / (yMax - yMin)) * innerH;
+      }
+
+      const pts = points.map(p => ({ x: xFor(p.date), y: yFor(p.weight), w: p.weight }));
+
+      let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
+
+      // 水平网格线
+      for (let i = 0; i <= 3; i++) {
+        const gy = padT + (i / 3) * innerH;
+        s += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '" stroke="#EDF2EE" stroke-width="1"/>';
+      }
+
+      // 折线（≥2 点才画）
+      if (pts.length >= 2) {
+        const d = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join(' ');
+        s += '<path d="' + d + '" fill="none" stroke="#5FA887" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+      }
+
+      // 数据点
+      pts.forEach((p, i) => {
+        const isLast = i === pts.length - 1;
+        const r = isLast ? 4.5 : 3.2;
+        s += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '" fill="' + (isLast ? '#4A8F70' : '#5FA887') + '" stroke="#fff" stroke-width="2"/>';
+        if (isLast) {
+          s += '<text x="' + p.x.toFixed(1) + '" y="' + (p.y - 12).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#4A8F70">' + p.w + '</text>';
+        }
+      });
+
+      // x 轴日期标签
+      const [sy, sm, sd] = startStr.split('-').map(Number);
+      const [ey, em, ed] = endStr.split('-').map(Number);
+      s += '<text x="' + padL + '" y="' + (H - 6) + '" font-size="10" fill="#8A948E">' + sm + '/' + sd + '</text>';
+      s += '<text x="' + (W - padR) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" fill="#8A948E">' + em + '/' + ed + '</text>';
+
+      s += '</svg>';
+      return s;
+    }
+
+    /* ============ Dify 调用 ============ */
+    async function callDify(query, conversationId) {
+      if (!CFG || !CFG.apiKey || CFG.apiKey.indexOf('xxxx') >= 0) {
+        throw new Error('尚未配置 Dify Key：请复制 config.example.js 为 config.js，填入 API 地址和 Key');
+      }
+      const body = { inputs: {}, query: query, response_mode: 'blocking', user: 'slowloss-demo' };
+      if (conversationId) body.conversation_id = conversationId;
+      const res = await fetch(CFG.apiBase.replace(/\/$/, '') + '/chat-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CFG.apiKey },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || '请求失败');
+      // 剥离推理模型的 <think> 思考过程，只保留最终答案
+      if (data.answer) {
+        data.answer = data.answer.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+      return data;
+    }
+
+    /* ============ 体重 AI 分析 ============ */
+    function showAnalysis(txt) {
+      const block = document.getElementById('analysis-block');
+      const text = document.getElementById('analysis-text');
+      block.classList.add('show');
+      text.textContent = txt;
+    }
+
+    async function runAnalysis() {
+      const list = loadWeights();
+      if (!list.length) return;
+      const latest = list[list.length - 1];
+      const today = todayKey();
+
+      // 同一天且体重值没变，直接用缓存，不重新调 AI
+      const cached = loadAnalysis();
+      if (cached && cached.date === today && cached.weight === latest.weight) {
+        showAnalysis(cached.text);
+        return;
+      }
+
+      const block = document.getElementById('analysis-block');
+      const text = document.getElementById('analysis-text');
+      block.classList.add('show');
+      text.innerHTML = '<span class="loading-dots">慢减正在帮你看趋势…</span>';
+
+      const unitName = currentUnit === 'jin' ? '斤' : '公斤';
+      const disp = w => (currentUnit === 'jin' ? Math.round(w.weight * 20) / 10 : w.weight);
+      const trend = list.map(w => disp(w)).join('、');
+      const query = '我今天的体重是 ' + disp(latest) + ' ' + unitName + '。我最近记录过的体重（从早到晚，单位' + unitName + '）：' + trend
+        + '。请先安抚我的情绪，再结合这个波动给我真实的判断和行动建议。';
+      try {
+        const data = await callDify(query);
+        const answer = data.answer || '（慢减没说出话来，稍后再试）';
+        text.textContent = answer;
+        saveAnalysis({ date: today, weight: latest.weight, text: answer });
+      } catch (e) {
+        text.textContent = '⚠️ ' + e.message;
+      }
+    }
+
+    /* ============ 聊天 ============ */
+    function getConvId() { return localStorage.getItem(STORE_CONV) || null; }
+    function setConvId(id) { if (id) localStorage.setItem(STORE_CONV, id); }
+
+    function addMsg(role, content) {
+      const list = document.getElementById('chat-list');
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.innerHTML = '<div class="bubble">' + escapeHtml(content) + '</div>';
+      list.appendChild(div);
+      list.scrollTop = list.scrollHeight;
+      return div;
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const q = input.value.trim();
+      if (!q) return;
+      input.value = '';
+      addMsg('user', q);
+      const btn = document.getElementById('send-btn');
+      btn.disabled = true;
+      const aiMsg = addMsg('ai', '慢减正在想…');
+      try {
+        const data = await callDify(q, getConvId());
+        aiMsg.querySelector('.bubble').textContent = data.answer || '（慢减走神了，稍后再试）';
+        setConvId(data.conversation_id);
+      } catch (e) {
+        aiMsg.querySelector('.bubble').textContent = '⚠️ ' + e.message;
+      } finally {
+        btn.disabled = false;
+        document.getElementById('chat-list').scrollTop = document.getElementById('chat-list').scrollHeight;
+      }
+    }
+
+    /* ============ Tab 切换 ============ */
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.id === 'tab-' + name));
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    }
+    function welcomeChat() {
+      const list = document.getElementById('chat-list');
+      if (!list.children.length) {
+        addMsg('ai', '你好呀，我是慢减。关于减脂、体重、情绪，有什么都可以问我～');
+      }
+    }
+
+    /* ============ 初始化 ============ */
+    document.getElementById('record-btn').addEventListener('click', recordWeight);
+    document.getElementById('weight-input').addEventListener('keydown', e => { if (e.key === 'Enter') recordWeight(); });
+    document.getElementById('send-btn').addEventListener('click', sendMessage);
+    document.getElementById('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+    document.querySelectorAll('.tab-item').forEach(t => t.addEventListener('click', () => {
+      switchTab(t.dataset.tab);
+      if (t.dataset.tab === 'chat') welcomeChat();
+    }));
+    document.querySelectorAll('.range-btn').forEach(btn => btn.addEventListener('click', () => {
+      currentRange = parseInt(btn.dataset.range, 10);
+      document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', b === btn));
+      renderTrend();
+    }));
+    document.querySelectorAll('.unit-btn').forEach(btn => btn.addEventListener('click', () => {
+      currentUnit = btn.dataset.unit;
+      document.querySelectorAll('.unit-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.getElementById('weight-unit').textContent = currentUnit === 'kg' ? '公斤' : '斤';
+      renderTrend();
+    }));
+
+    renderDaily();
+    renderTrend();
+    if (loadWeights().length) runAnalysis();
+  </script>
+</body>
+</html>
