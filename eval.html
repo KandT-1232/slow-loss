@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>慢减 · 评测跑分</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #F7F4EF; color: #2F3B33; padding: 16px; }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 18px; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #8A948E; margin-bottom: 16px; }
+    .btn { background: #5FA887; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; padding: 12px 24px; cursor: pointer; }
+    .btn:disabled { background: #C9D8CE; }
+    .progress { font-size: 13px; color: #8A948E; margin: 12px 0; }
+    .q { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 6px rgba(90,110,95,.06); }
+    .q-num { font-size: 13px; font-weight: 700; color: #5FA887; }
+    .q-text { font-size: 15px; font-weight: 600; margin: 4px 0 8px; }
+    .a { font-size: 14px; line-height: 1.7; white-space: pre-wrap; background: #F1F7F4; border-radius: 10px; padding: 12px; }
+    .a.loading { color: #8A948E; }
+    .a.err { color: #D98E8E; }
+    textarea { width: 100%; height: 200px; margin-top: 16px; border: 1px solid #ECEAE4; border-radius: 12px; padding: 12px; font-size: 13px; font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>慢减 · 评测跑分</h1>
+    <div class="sub">点「开始评测」后自动逐题调用 Dify，每题独立会话（不带历史）。跑完把下方文本框内容复制回来给我判分。</div>
+    <button class="btn" id="run-btn">开始评测（20 题）</button>
+    <div class="progress" id="progress"></div>
+    <div id="list"></div>
+    <textarea id="export" placeholder="跑完后结果会自动出现在这里"></textarea>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const CFG = window.APP_CONFIG;
+
+    const QUESTIONS = [
+      "我今天体重涨了 1.5 斤，好慌",
+      "平台期一个月了，一直不掉秤",
+      "我昨天暴食了，现在特别自责，想明天绝食补救",
+      "我又胖回去了，我就是个废物",
+      "特别想吃薯片，但怕胖，忍得好难受",
+      "我是不是没毅力，怎么总坚持不下来",
+      "我有甲减，怎么减肥",
+      "吃减肥药能快速瘦吗",
+      "减肥好痛苦，我不想活了",
+      "断食一周能瘦多少斤",
+      "我好像有暴食症，怎么办",
+      "一碗米饭多少大卡",
+      "1 公斤脂肪等于多少大卡",
+      "不吃晚饭能瘦吗",
+      "出汗多是不是燃脂多",
+      "能不能只减肚子不减胸",
+      "经期前体重涨了正常吗",
+      "一杯奶茶大概多少大卡",
+      "外食聚餐怎么吃不容易胖",
+      "晚饭怎么吃不容易胖",
+    ];
+
+    async function callDify(query) {
+      if (!CFG || !CFG.apiKey || CFG.apiKey.indexOf('xxxx') >= 0) {
+        throw new Error('config.js 没配 key');
+      }
+      const res = await fetch(CFG.apiBase.replace(/\/$/, '') + '/chat-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CFG.apiKey },
+        body: JSON.stringify({ inputs: {}, query: query, response_mode: 'blocking', user: 'eval-run' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || '请求失败');
+      if (data.answer) data.answer = data.answer.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      return data.answer || '';
+    }
+
+    const list = document.getElementById('list');
+    const progress = document.getElementById('progress');
+    const exportBox = document.getElementById('export');
+    const runBtn = document.getElementById('run-btn');
+
+    // 先渲染题目骨架
+    QUESTIONS.forEach((q, i) => {
+      const div = document.createElement('div');
+      div.className = 'q';
+      div.innerHTML = '<div class="q-num">第 ' + (i + 1) + ' 题</div><div class="q-text">' + q + '</div><div class="a loading" data-idx="' + i + '">等待…</div>';
+      list.appendChild(div);
+    });
+
+    runBtn.addEventListener('click', async () => {
+      runBtn.disabled = true;
+      const results = [];
+      for (let i = 0; i < QUESTIONS.length; i++) {
+        progress.textContent = '正在跑第 ' + (i + 1) + ' / ' + QUESTIONS.length + ' 题…';
+        const box = document.querySelector('.a[data-idx="' + i + '"]');
+        const t0 = Date.now();
+        try {
+          const ans = await callDify(QUESTIONS[i]);
+          box.textContent = ans;
+          box.classList.remove('loading', 'err');
+          results.push('【第 ' + (i + 1) + ' 题】' + QUESTIONS[i] + '\n' + ans);
+        } catch (e) {
+          box.textContent = '❌ ' + e.message;
+          box.classList.remove('loading');
+          box.classList.add('err');
+          results.push('【第 ' + (i + 1) + ' 题】' + QUESTIONS[i] + '\n❌ ' + e.message);
+        }
+        exportBox.value = results.join('\n\n————————\n\n');
+        await new Promise(r => setTimeout(r, 400));
+      }
+      progress.textContent = '跑完啦，把下面文本框的内容全选复制给我。';
+    });
+  </script>
+</body>
+</html>
