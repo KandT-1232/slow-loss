@@ -528,7 +528,7 @@
     }
 
     async function runAnalysis() {
-      const list = loadWeights();
+      const list = loadWeights().sort((a, b) => a.date < b.date ? -1 : 1);
       if (!list.length) return;
       const latest = list[list.length - 1];
       const today = todayKey();
@@ -546,10 +546,40 @@
       text.innerHTML = '<span class="loading-dots">慢减正在帮你看趋势…</span>';
 
       const unitName = currentUnit === 'jin' ? '斤' : '公斤';
-      const disp = w => (currentUnit === 'jin' ? Math.round(w.weight * 20) / 10 : w.weight);
-      const trend = list.map(w => disp(w)).join('、');
-      const query = '我今天的体重是 ' + disp(latest) + ' ' + unitName + '。我最近记录过的体重（从早到晚，单位' + unitName + '）：' + trend
-        + '。请先安抚我的情绪，再结合这个波动给我真实的判断和行动建议。';
+      const fmtW = kgVal => {
+        const v = currentUnit === 'jin' ? kgVal * 2 : kgVal;
+        return Math.round(v * 10) / 10;
+      };
+
+      // 近 7 天趋势：在本地算好指标再喂给模型，而不是丢一串裸数字让模型自己猜
+      const startStr = addDays(today, -6);
+      const win = list.filter(w => w.date >= startStr && w.date <= today);
+      const daysRecorded = win.length;
+      const daysMissing = Math.max(0, 7 - daysRecorded);
+      const meanKg = daysRecorded ? win.reduce((s, w) => s + w.weight, 0) / daysRecorded : 0;
+
+      const latestIsToday = latest.date === today;
+      const headline = (latestIsToday ? '我今天的体重是 ' : '我最近一次记录（' + latest.date + '）是 ')
+        + fmtW(latest.weight) + ' ' + unitName;
+
+      let trendDesc;
+      if (daysRecorded >= 2) {
+        const weights = win.map(w => w.weight);
+        const deltaKg = win[daysRecorded - 1].weight - win[0].weight;
+        const spanKg = Math.max.apply(null, weights) - Math.min.apply(null, weights);
+        const dir = deltaKg < -0.05 ? '降了' : (deltaKg > 0.05 ? '涨了' : '基本持平');
+        trendDesc = '近 7 天平均 ' + fmtW(meanKg) + ' ' + unitName
+          + '，7 天内' + dir + ' ' + fmtW(Math.abs(deltaKg)) + ' ' + unitName
+          + '，波动 ±' + fmtW(spanKg / 2) + ' ' + unitName
+          + '，共记录 ' + daysRecorded + ' 天' + (daysMissing > 0 ? '（有 ' + daysMissing + ' 天断档）' : '');
+      } else if (daysRecorded === 1) {
+        trendDesc = '近 7 天只有这一条记录，还看不出趋势';
+      } else {
+        trendDesc = '近 7 天没有记录';
+      }
+
+      const query = headline + '。' + trendDesc
+        + '。请先安抚我的情绪，再结合这些数据给我真实的判断和行动建议。';
       try {
         const data = await callDify(query);
         const answer = data.answer || '（慢减没说出话来，稍后再试）';
